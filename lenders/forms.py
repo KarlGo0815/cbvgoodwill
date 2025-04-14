@@ -1,0 +1,64 @@
+from django import forms
+from django.utils.safestring import mark_safe
+from .models import Booking, Lender, Apartment
+from datetime import datetime
+
+class BookingAdminForm(forms.ModelForm):
+    warning_html = ""
+
+    class Meta:
+        model = Booking
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.warning_html = ""  # Standardzustand
+
+        try:
+            lender_id = self.data.get("lender") or getattr(self.instance, "lender_id", None)
+            apartment_id = self.data.get("apartment") or getattr(self.instance, "apartment_id", None)
+            start = self.data.get("start_date") or getattr(self.instance, "start_date", None)
+            end = self.data.get("end_date") or getattr(self.instance, "end_date", None)
+
+            if not (lender_id and apartment_id and start and end):
+                self.warning_html = mark_safe(
+                    "<div style='background-color:#ffffcc; color:black; padding:10px; border:1px solid #cccc00;'>"
+                    "ℹ️ Bitte wähle <strong>Lender</strong>, <strong>Appartement</strong>, <strong>Startdatum</strong> und "
+                    "<strong>Enddatum</strong> aus, um die Guthabenprüfung durchzuführen."
+                    "</div>"
+                )
+                print("[DEBUG] Felder unvollständig – Prüfung übersprungen.")
+                return
+
+            lender = Lender.objects.get(id=lender_id)
+            apartment = Apartment.objects.get(id=apartment_id)
+
+            if isinstance(start, str):
+                start = datetime.strptime(start, "%Y-%m-%d").date()
+            if isinstance(end, str):
+                end = datetime.strptime(end, "%Y-%m-%d").date()
+
+            nights = (end - start).days
+            rabatt = lender.discount_percent or 0
+            preis = apartment.price_per_night
+            kosten = round(nights * preis * (1 - rabatt / 100), 2)
+            saldo = lender.current_balance()
+
+            print(f"[DEBUG] Nächte: {nights}, Preis: {preis}, Rabatt: {rabatt}, Kosten: {kosten}, Saldo: {saldo}")
+
+            if nights > 0 and kosten > saldo:
+                self.warning_html = mark_safe(
+                    f"""
+                    <div style='border: 2px solid red; background-color: #ffe5e5; color: black; padding: 10px; margin-bottom: 15px;'>
+                        <strong>⚠️ Achtung:</strong> Das aktuelle Guthaben beträgt <strong>{saldo:.2f} €</strong>,
+                        aber die Buchung kostet <strong>{kosten:.2f} €</strong>.
+                    </div>
+                    """
+                )
+
+        except Exception as e:
+            print(f"[ERROR] Guthabenprüfung fehlgeschlagen: {e}")
+            self.warning_html = mark_safe(
+                f"<div style='color:red;'>⚠️ Fehler bei der Guthabenprüfung: {e}</div>"
+            )
