@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-gv%d((c%05kg32me=ake(455ap5+58nfu1xbbs=p&s147lmyf@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['cbvgoodwill.onrender.com']
 
 
 # Application definition
