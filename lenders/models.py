@@ -92,6 +92,7 @@ class Apartment(models.Model):
         return self.name
 
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 class Booking(models.Model):
     lender = models.ForeignKey(Lender, on_delete=models.CASCADE, related_name='bookings')
@@ -100,18 +101,28 @@ class Booking(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def nights(self):
-        return (self.end_date - self.start_date).days
+    # ...
 
-    def price_per_night_after_discount(self):
-        discount = self.lender.discount_percent or 0
-        return self.apartment.price_per_night * (1 - discount / 100)
+    def clean(self):
+        super().clean()
+        if self.apartment and self.start_date and self.end_date:
+            overlapping = Booking.objects.filter(
+                apartment=self.apartment,
+                start_date__lt=self.end_date,
+                end_date__gt=self.start_date,
+            ).exclude(id=self.id)
 
-    def total_cost(self):
-        return round(self.nights() * self.price_per_night_after_discount(), 2)
+            if overlapping.exists():
+                raise ValidationError(
+                    _("❌ Diese Buchung überschneidet sich mit einer bestehenden Buchung von %(apartment)s."),
+                    code='overlap',
+                    params={'apartment': self.apartment.name},
+                )
 
     def __str__(self):
         return f"{self.lender} – {self.apartment} – {self.start_date} bis {self.end_date}"
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+    obj.full_clean()
+    super().save_model(request, obj, form, change)
