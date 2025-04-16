@@ -2,6 +2,12 @@ from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import Lender, Loan, Payment, Booking, Apartment
 from .forms import BookingAdminForm
+from .models import SeasonalRate
+
+@admin.register(SeasonalRate)
+class SeasonalRateAdmin(admin.ModelAdmin):
+    list_display = ("apartment", "start_date", "end_date", "price_per_night")
+    list_filter = ("apartment",)
 
 @admin.register(Lender)
 class LenderAdmin(admin.ModelAdmin):
@@ -54,6 +60,13 @@ class BookingAdmin(admin.ModelAdmin):
             )
         }),
     )
+
+@admin.register(SeasonalRate)
+class SeasonalRateAdmin(admin.ModelAdmin):
+    list_display = ("apartment", "start_date", "end_date", "price_per_night")
+    list_filter = ("apartment",)
+    search_fields = ("apartment__name",)
+    ordering = ("apartment__name", "start_date")  # Gruppiert nach Apartment, sortiert nach Startdatum
 
     def _saldo_warnung(self, obj):
         # Div für JavaScript-Warnung

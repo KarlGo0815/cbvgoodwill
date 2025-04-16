@@ -85,6 +85,14 @@ class Apartment(models.Model):
     def __str__(self):
         return self.name
 
+class SeasonalRate(models.Model):
+    apartment = models.ForeignKey(Apartment, on_delete=models.CASCADE, related_name='seasonal_rates')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    price_per_night = models.DecimalField(max_digits=7, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.apartment.name}: {self.start_date} bis {self.end_date} – {self.price_per_night} €"
 
 class Booking(models.Model):
     lender = models.ForeignKey(Lender, on_delete=models.CASCADE, related_name='bookings')
@@ -93,17 +101,54 @@ class Booking(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # 🔧 Optional: Pauschalpreis z. B. für „La Villa Complete“
+    custom_total_price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Pauschalpreis (optional)"
+    )
+
+    def __str__(self):
+        return f"{self.lender} – {self.apartment} – {self.start_date} bis {self.end_date}"
+
     def nights(self):
         return (self.end_date - self.start_date).days
 
+    def get_seasonal_price(self):
+        """Ermittelt ggf. den passenden Saisonpreis."""
+        if not self.apartment:
+            return None
+        overlapping_rate = self.apartment.seasonal_rates.filter(
+            start_date__lte=self.start_date,
+            end_date__gte=self.end_date
+        ).first()
+        return overlapping_rate.price_per_night if overlapping_rate else None
+
     def price_per_night_after_discount(self):
+        # Sonderfall: "La Villa Complete" mit Pauschalpreis
+        if self.apartment.name == "La Villa Complete" and self.custom_total_price:
+            return self.custom_total_price
+
+        # Standard- oder Saisonpreis
+        seasonal_price = self.get_seasonal_price()
+        base_price = seasonal_price or self.apartment.price_per_night
         discount = self.lender.discount_percent or 0
-        return self.apartment.price_per_night * (1 - discount / 100)
+        return base_price * (1 - discount / 100)
 
     def total_cost(self):
+        # Sonderfall: "La Villa Complete" mit Pauschalpreis
+        if self.apartment.name == "La Villa Complete" and self.custom_total_price:
+            return round(self.custom_total_price, 2)
+
+        # Standardberechnung
         return round(self.nights() * self.price_per_night_after_discount(), 2)
 
     def clean(self):
+        from django.core.exceptions import ValidationError
+        from django.utils.translation import gettext_lazy as _
+
         super().clean()
         if self.apartment and self.start_date and self.end_date:
             overlapping = Booking.objects.filter(

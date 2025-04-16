@@ -12,12 +12,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+import dj_database_url  # kommt danach
 
-import dj_database_url
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get("DATABASE_URL")
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
     )
 }
 
