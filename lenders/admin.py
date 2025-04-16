@@ -70,3 +70,4 @@ class BookingAdmin(admin.ModelAdmin):
 
     class Media:
         js = ("lenders/js/check_balance.js",)  # <-- dein JS wird hier eingebunden
+admin.site.site_url = "/lenders/calendar/"

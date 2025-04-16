@@ -1,9 +1,39 @@
-# lenders/views.py
+from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.csrf import csrf_exempt
-from .models import Lender, Apartment
-from datetime import datetime
+from .models import Lender, Apartment, Booking
+from datetime import datetime, timedelta
+
+# -------------------------------
+# 📅 Kalenderansicht
+# -------------------------------
+
+@staff_member_required
+def calendar_view(request):
+    """Rendert die Kalenderseite für Buchungen."""
+    return render(request, 'calendar.html')
+
+
+@staff_member_required
+def booking_events(request):
+    """Liefert alle Buchungen als JSON (für FullCalendar oder JS-Frontend)."""
+    bookings = Booking.objects.select_related("apartment", "lender").all()
+    events = []
+
+    for booking in bookings:
+        events.append({
+            "title": f"{booking.apartment.name} – {booking.lender.first_name}",
+            "start": booking.start_date.isoformat(),
+            "end": (booking.end_date + timedelta(days=1)).isoformat(),  # FullCalendar benötigt exclusive end
+            "color": "#ff6666",
+        })
+
+    return JsonResponse(events, safe=False)
+
+# -------------------------------
+# ⚠️ Guthabenprüfung bei Buchung
+# -------------------------------
 
 @csrf_exempt
 @staff_member_required
