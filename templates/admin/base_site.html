@@ -1,10 +1,13 @@
 {% extends "admin/base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block branding %}
-<h1 id="site-name">
-  <a href="{% url 'admin:index' %}">CBV Goodwill Admin</a>
-</h1>
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <img src="{% static 'lenders/img/admin-logo.png' %}" alt="Logo" height="40">
+    <h1 id="site-name" style="margin: 0;">
+      <a href="{% url 'admin:index' %}">CBV Goodwill Admin</a>
+    </h1>
+  </div>
 {% endblock %}
 
 {% block nav-global %}
