@@ -1,0 +1,17 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">CBV Goodwill Admin</a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}
+  <div id="user-tools">
+    <a href="/lenders/calendar/">📅 Buchungskalender</a>
+    {% if user.is_active and user.is_staff %}
+      | <a href="{% url 'admin:logout' %}">{% translate 'Log out' %}</a>
+    {% endif %}
+  </div>
+{% endblock %}
