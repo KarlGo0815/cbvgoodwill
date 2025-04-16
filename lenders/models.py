@@ -121,8 +121,3 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.lender} – {self.apartment} – {self.start_date} bis {self.end_date}"
-
-
-    def save_model(self, request, obj, form, change):
-    obj.full_clean()
-    super().save_model(request, obj, form, change)
