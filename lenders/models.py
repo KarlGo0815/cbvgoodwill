@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 LANGUAGE_CHOICES = [
     ('de', 'Deutsch'),
@@ -21,10 +23,6 @@ class Lender(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
-
-    def current_balance(self):
-        total = sum(p.amount_eur() for p in self.payments.all())
-        return round(total, 2)
 
     def current_balance(self):
         total_payments = sum(p.amount_eur() for p in self.payments.all())
@@ -77,10 +75,6 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.lender} – {self.date} – {self.original_amount} {self.currency}"
 
-    def current_balance(self):
-        total_payments = sum(p.amount_eur() for p in self.payments.all())
-        total_bookings = sum(b.total_cost() for b in self.bookings.all())
-        return round(total_payments - total_bookings, 2)
 
 class Apartment(models.Model):
     name = models.CharField(max_length=100)
@@ -91,8 +85,6 @@ class Apartment(models.Model):
     def __str__(self):
         return self.name
 
-from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
 
 class Booking(models.Model):
     lender = models.ForeignKey(Lender, on_delete=models.CASCADE, related_name='bookings')
@@ -101,7 +93,15 @@ class Booking(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # ...
+    def nights(self):
+        return (self.end_date - self.start_date).days
+
+    def price_per_night_after_discount(self):
+        discount = self.lender.discount_percent or 0
+        return self.apartment.price_per_night * (1 - discount / 100)
+
+    def total_cost(self):
+        return round(self.nights() * self.price_per_night_after_discount(), 2)
 
     def clean(self):
         super().clean()
