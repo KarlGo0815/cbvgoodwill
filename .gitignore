@@ -1,3 +1,68 @@
+# (oder per VSCode oder einem beliebigen Editor)
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# macOS Finder files
+.DS_Store
+
+# Editor configs
+.vscode/
+.idea/
+
+# Logs & databases
+*.log
+*.sqlite3
+db.sqlite3
+
+# Django stuff
+*.pot
+*.pyc
+*.pyo
+*.pyd
+staticfiles/
+media/
+
+# Unit test / coverage
+htmlcov/
+.coverage
+.tox/
+.nox/
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# PyInstaller
+dist/
+build/
+*.spec
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VS Code settings
+.history/
+
+# System
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Secret files (if you use .env)
+.env
+.env.*
 # Python
 __pycache__/
 *.py[cod]
