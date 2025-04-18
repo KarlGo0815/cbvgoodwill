@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from decimal import Decimal
 
 LANGUAGE_CHOICES = [
     ('de', 'Deutsch'),
@@ -19,7 +20,7 @@ class Lender(models.Model):
     mobile = models.CharField("Mobiltelefon", max_length=20, blank=True)
     whatsapp = models.CharField("WhatsApp", max_length=20, blank=True)
     language = models.CharField("Sprache", max_length=2, choices=LANGUAGE_CHOICES, default='de')
-    discount_percent = models.DecimalField("Rabatt in %", max_digits=5, decimal_places=2, default=0.0)
+    discount_percent = models.DecimalField("Rabatt in %", max_digits=5, decimal_places=2, default=Decimal('0.0'))
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -27,7 +28,7 @@ class Lender(models.Model):
     def current_balance(self):
         total_payments = sum(p.amount_eur() for p in self.payments.all())
         total_bookings = sum(b.total_cost() for b in self.bookings.all())
-        return round(total_payments - total_bookings, 2)
+        return (total_payments - total_bookings).quantize(Decimal('0.01'))
 
 
 class Loan(models.Model):
@@ -56,11 +57,11 @@ class Payment(models.Model):
     date = models.DateField()
     original_amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=3, choices=[('EUR', 'Euro'), ('USD', 'US Dollar')])
-    exchange_rate = models.DecimalField("Wechselkurs (nur bei USD)", max_digits=6, decimal_places=4, default=1.0)
+    exchange_rate = models.DecimalField("Wechselkurs (nur bei USD)", max_digits=6, decimal_places=4, default=Decimal('1.0'))
     loan = models.ForeignKey('Loan', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
 
     def amount_eur(self):
-        return self.original_amount * self.exchange_rate if self.currency == 'USD' else self.original_amount
+        return (self.original_amount * self.exchange_rate).quantize(Decimal('0.01')) if self.currency == 'USD' else self.original_amount
 
     def save(self, *args, **kwargs):
         if not self.loan:
@@ -85,6 +86,7 @@ class Apartment(models.Model):
     def __str__(self):
         return self.name
 
+
 class SeasonalRate(models.Model):
     apartment = models.ForeignKey(Apartment, on_delete=models.CASCADE, related_name='seasonal_rates')
     start_date = models.DateField()
@@ -94,30 +96,19 @@ class SeasonalRate(models.Model):
     def __str__(self):
         return f"{self.apartment.name}: {self.start_date} bis {self.end_date} – {self.price_per_night} €"
 
+
 class Booking(models.Model):
     lender = models.ForeignKey(Lender, on_delete=models.CASCADE, related_name='bookings')
     apartment = models.ForeignKey(Apartment, on_delete=models.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
-
-    # 🔧 Optional: Pauschalpreis z. B. für „La Villa Complete“
-    custom_total_price = models.DecimalField(
-        max_digits=8,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        verbose_name="Pauschalpreis (optional)"
-    )
-
-    def __str__(self):
-        return f"{self.lender} – {self.apartment} – {self.start_date} bis {self.end_date}"
+    custom_total_price = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name="Pauschalpreis (optional)")
 
     def nights(self):
         return (self.end_date - self.start_date).days
 
     def get_seasonal_price(self):
-        """Ermittelt ggf. den passenden Saisonpreis."""
         if not self.apartment:
             return None
         overlapping_rate = self.apartment.seasonal_rates.filter(
@@ -127,28 +118,19 @@ class Booking(models.Model):
         return overlapping_rate.price_per_night if overlapping_rate else None
 
     def price_per_night_after_discount(self):
-        # Sonderfall: "La Villa Complete" mit Pauschalpreis
         if self.apartment.name == "La Villa Complete" and self.custom_total_price:
             return self.custom_total_price
-
-        # Standard- oder Saisonpreis
         seasonal_price = self.get_seasonal_price()
         base_price = seasonal_price or self.apartment.price_per_night
-        discount = self.lender.discount_percent or 0
-        return base_price * (1 - discount / 100)
+        discount = self.lender.discount_percent or Decimal('0')
+        return (base_price * (Decimal('1') - discount / Decimal('100'))).quantize(Decimal('0.01'))
 
     def total_cost(self):
-        # Sonderfall: "La Villa Complete" mit Pauschalpreis
         if self.apartment.name == "La Villa Complete" and self.custom_total_price:
-            return round(self.custom_total_price, 2)
-
-        # Standardberechnung
-        return round(self.nights() * self.price_per_night_after_discount(), 2)
+            return self.custom_total_price.quantize(Decimal('0.01'))
+        return (Decimal(self.nights()) * self.price_per_night_after_discount()).quantize(Decimal('0.01'))
 
     def clean(self):
-        from django.core.exceptions import ValidationError
-        from django.utils.translation import gettext_lazy as _
-
         super().clean()
         if self.apartment and self.start_date and self.end_date:
             overlapping = Booking.objects.filter(
@@ -156,13 +138,8 @@ class Booking(models.Model):
                 start_date__lt=self.end_date,
                 end_date__gt=self.start_date,
             ).exclude(id=self.id)
-
             if overlapping.exists():
-                raise ValidationError(
-                    _("❌ Diese Buchung überschneidet sich mit einer bestehenden Buchung von %(apartment)s."),
-                    code='overlap',
-                    params={'apartment': self.apartment.name},
-                )
+                raise ValidationError(_("❌ Diese Buchung überschneidet sich mit einer bestehenden Buchung von %(apartment)s."), code='overlap', params={'apartment': self.apartment.name})
 
     def __str__(self):
         return f"{self.lender} – {self.apartment} – {self.start_date} bis {self.end_date}"

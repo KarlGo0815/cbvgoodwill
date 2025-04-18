@@ -1,9 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.csrf import csrf_exempt
 from .models import Lender, Apartment, Booking
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 # -------------------------------
 # 📅 Kalenderansicht
@@ -19,15 +20,15 @@ def calendar_view(request):
 def booking_events(request):
     """Liefert alle Buchungen als JSON (für FullCalendar oder JS-Frontend)."""
     bookings = Booking.objects.select_related("apartment", "lender").all()
-    events = []
-
-    for booking in bookings:
-        events.append({
+    events = [
+        {
             "title": f"{booking.apartment.name} – {booking.lender.first_name}",
             "start": booking.start_date.isoformat(),
-            "end": (booking.end_date + timedelta(days=1)).isoformat(),  # FullCalendar benötigt exclusive end
+            "end": (booking.end_date + timedelta(days=1)).isoformat(),
             "color": "#ff6666",
-        })
+        }
+        for booking in bookings
+    ]
 
     return JsonResponse(events, safe=False)
 
@@ -47,19 +48,20 @@ def check_balance(request):
         if not all([lender_id, apartment_id, start, end]):
             return JsonResponse({"status": "incomplete"})
 
-        lender = Lender.objects.get(id=lender_id)
-        apartment = Apartment.objects.get(id=apartment_id)
+        lender = get_object_or_404(Lender, id=lender_id)
+        apartment = get_object_or_404(Apartment, id=apartment_id)
 
-        start = datetime.strptime(start, "%Y-%m-%d").date()
-        end = datetime.strptime(end, "%Y-%m-%d").date()
-        nights = (end - start).days
+        start_date = datetime.strptime(start, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end, "%Y-%m-%d").date()
+        nights = (end_date - start_date).days
 
         if nights <= 0:
             return JsonResponse({"status": "invalid_dates"})
 
-        rabatt = lender.discount_percent or 0
+        rabatt = lender.discount_percent or Decimal('0.0')
         preis = apartment.price_per_night
-        kosten = round(nights * preis * (1 - rabatt / 100), 2)
+
+        kosten = (Decimal(nights) * preis * (Decimal('1.0') - rabatt / Decimal('100.0'))).quantize(Decimal('0.01'))
         saldo = lender.current_balance()
 
         if kosten > saldo:
@@ -70,5 +72,6 @@ def check_balance(request):
             })
         else:
             return JsonResponse({"status": "ok"})
+
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
