@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import Lender, Loan, Payment, Booking, Apartment, SeasonalRate
-from .forms import BookingAdminForm
+from .forms import BookingAdminForm, LenderAdminForm
 
 # 📆 Saisonpreise im Admin
 @admin.register(SeasonalRate)
@@ -14,9 +14,21 @@ class SeasonalRateAdmin(admin.ModelAdmin):
 
 @admin.register(Lender)
 class LenderAdmin(admin.ModelAdmin):
+    form = LenderAdminForm
+
     list_display = (
         "first_name", "last_name", "email", "language",
         "discount_percent", "current_balance_display",
+    )
+
+    fieldsets = (
+        (None, {
+            'fields': ('first_name', 'last_name', 'email', 'language')
+        }),
+        ('Optional', {
+            'classes': ('collapse',),
+            'fields': ('mobile', 'whatsapp', 'postal_code', 'country', 'address', 'discount_percent')
+        }),
     )
 
     def current_balance_display(self, obj):
@@ -24,6 +36,7 @@ class LenderAdmin(admin.ModelAdmin):
             return f"{obj.current_balance():.2f} €"
         except Exception as e:
             return f"Fehler: {e}"
+
     current_balance_display.short_description = "Saldo"
 
 
@@ -38,6 +51,7 @@ class PaymentAdmin(admin.ModelAdmin):
             return f"{obj.amount_eur():,.2f} €"
         except Exception:
             return "–"
+
     amount_eur_display.short_description = "Betrag in EUR"
 
 
@@ -67,6 +81,7 @@ class BookingAdmin(admin.ModelAdmin):
 
     def _saldo_warnung(self, obj):
         return mark_safe('<div id="saldo-warning"></div>')
+
     _saldo_warnung.short_description = "Guthabenprüfung"
 
     def total_cost_display(self, obj):
@@ -74,10 +89,12 @@ class BookingAdmin(admin.ModelAdmin):
             return f"{obj.total_cost():.2f} €"
         except Exception:
             return "–"
+
     total_cost_display.short_description = "Abgewohnter Betrag"
 
     class Media:
         js = ("lenders/js/check_balance.js",)  # Dein JS zur Live-Guthabenprüfung
+
 
 # 📍 Link im Admin zur Kalenderansicht
 admin.site.site_url = "/lenders/calendar/"

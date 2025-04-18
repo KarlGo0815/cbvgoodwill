@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
 
+
 LANGUAGE_CHOICES = [
     ('de', 'Deutsch'),
     ('en', 'English'),
@@ -12,9 +13,9 @@ LANGUAGE_CHOICES = [
 class Lender(models.Model):
     first_name = models.CharField("Vorname", max_length=50)
     last_name = models.CharField("Nachname", max_length=50)
-    street = models.CharField("Straße", max_length=100)
-    house_number = models.CharField("Hausnummer", max_length=10)
+    address = models.CharField("Adresse (Straße & Hausnummer)", max_length=120)  # ✅ kombiniert
     postal_code = models.CharField("PLZ", max_length=10)
+    city = models.CharField("Ort", max_length=50, default="Berlin")
     country = models.CharField("Land", max_length=50)
     email = models.EmailField()
     mobile = models.CharField("Mobiltelefon", max_length=20, blank=True)
@@ -39,13 +40,7 @@ class Loan(models.Model):
 
     lender = models.ForeignKey(Lender, on_delete=models.CASCADE, related_name='loans')
     loan_type = models.CharField(max_length=10, choices=LOAN_TYPE_CHOICES)
-    target_amount = models.DecimalField(
-        "Zielbetrag (nur bei festen Darlehen)",
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True
-    )
+    target_amount = models.DecimalField("Zielbetrag (nur bei festen Darlehen)", max_digits=10, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -105,6 +100,9 @@ class Booking(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     custom_total_price = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name="Pauschalpreis (optional)")
 
+    def __str__(self):
+        return f"{self.lender} – {self.apartment} – {self.start_date} bis {self.end_date}"
+
     def nights(self):
         return (self.end_date - self.start_date).days
 
@@ -132,6 +130,8 @@ class Booking(models.Model):
 
     def clean(self):
         super().clean()
+
+        # Normale Überschneidungsprüfung
         if self.apartment and self.start_date and self.end_date:
             overlapping = Booking.objects.filter(
                 apartment=self.apartment,
@@ -139,7 +139,33 @@ class Booking(models.Model):
                 end_date__gt=self.start_date,
             ).exclude(id=self.id)
             if overlapping.exists():
-                raise ValidationError(_("❌ Diese Buchung überschneidet sich mit einer bestehenden Buchung von %(apartment)s."), code='overlap', params={'apartment': self.apartment.name})
+                raise ValidationError(
+                    _("❌ Diese Buchung überschneidet sich mit einer bestehenden Buchung von %(apartment)s."),
+                    code='overlap',
+                    params={'apartment': self.apartment.name},
+                )
 
-    def __str__(self):
-        return f"{self.lender} – {self.apartment} – {self.start_date} bis {self.end_date}"
+        # Zusatzregel für „La Villa Complete“
+        if self.apartment.name == "La Villa Complete":
+            required_apartments = ["App en Nave", "App en Villa"]
+            conflicts = []
+
+            for apt_name in required_apartments:
+                apt = Apartment.objects.filter(name=apt_name).first()
+                if apt:
+                    overlap = Booking.objects.filter(
+                        apartment=apt,
+                        start_date__lt=self.end_date,
+                        end_date__gt=self.start_date,
+                    ).exists()
+                    if not overlap:
+                        return  # es ist ein Apartment frei
+
+                    conflicts.append(apt_name)
+
+            if conflicts:
+                raise ValidationError(
+                    _("❌ 'La Villa Complete' kann nur gebucht werden, wenn mindestens eines der folgenden Apartments frei ist: %(apartments)s"),
+                    code='villa_conflict',
+                    params={'apartments': ", ".join(required_apartments)},
+                )
