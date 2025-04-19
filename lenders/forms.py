@@ -2,6 +2,7 @@ from django import forms
 from django.utils.safestring import mark_safe
 from .models import Booking, Lender, Apartment
 from datetime import datetime
+from decimal import Decimal
 
 
 class BookingAdminForm(forms.ModelForm):
@@ -10,11 +11,6 @@ class BookingAdminForm(forms.ModelForm):
     class Meta:
         model = Booking
         fields = "__all__"
-
-    override_confirm = forms.BooleanField(
-        label="Warnung übersteuern – ich bestätige bewusst",
-        required=False
-    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,8 +24,12 @@ class BookingAdminForm(forms.ModelForm):
 
             if not (lender_id and apartment_id and start and end):
                 self.warning_html = mark_safe(
-                    "<div style='background-color:#ffffcc; padding:10px;'>ℹ️ Bitte alle Felder ausfüllen, um die Prüfung zu aktivieren.</div>"
+                    "<div style='background-color:#ffffcc; color:black; padding:10px; border:1px solid #cccc00;'>"
+                    "ℹ️ Bitte wähle <strong>Lender</strong>, <strong>Appartement</strong>, <strong>Startdatum</strong> und "
+                    "<strong>Enddatum</strong> aus, um die Guthabenprüfung durchzuführen."
+                    "</div>"
                 )
+                self.instance.form = self
                 return
 
             lender = Lender.objects.get(id=lender_id)
@@ -41,49 +41,42 @@ class BookingAdminForm(forms.ModelForm):
                 end = datetime.strptime(end, "%Y-%m-%d").date()
 
             nights = (end - start).days
+            rabatt = lender.discount_percent or Decimal('0')
             preis = apartment.price_per_night
-            rabatt = lender.discount_percent or 0
-            kosten = round(nights * float(preis) * (1 - float(rabatt) / 100), 2)
+            kosten = (Decimal(nights) * preis * (Decimal('1') - rabatt / Decimal('100'))).quantize(Decimal('0.01'))
             saldo = lender.current_balance()
 
+            # ⚠️ Guthabenwarnung
             if nights > 0 and kosten > saldo:
                 self.warning_html += mark_safe(
                     f"""
-                    <div style='border: 2px solid red; background-color: #ffe5e5; padding: 10px; margin: 10px 0;'>
-                        ⚠️ Das aktuelle Guthaben beträgt <strong>{saldo:.2f} €</strong>,
+                    <div style='border: 2px solid red; background-color: #ffe5e5; color: black; padding: 10px; margin-bottom: 15px;'>
+                        <strong>⚠️ Achtung:</strong> Das aktuelle Guthaben beträgt <strong>{saldo:.2f} €</strong>,
                         aber die Buchung kostet <strong>{kosten:.2f} €</strong>.
                     </div>
                     """
                 )
 
+            # 📌 La Villa Complete Spezialhinweis
             if apartment.name.strip().lower() == "la villa complete":
-                # Prüfe ob andere Apartments frei sind
-                other_apartments = Apartment.objects.exclude(name__iexact="La Villa Complete")
-                all_occupied = True
-                for apt in other_apartments:
-                    if not Booking.objects.filter(
-                        apartment=apt,
-                        start_date__lt=end,
-                        end_date__gt=start,
-                    ).exists():
-                        all_occupied = False
-                        break
-
-                if all_occupied:
-                    self.warning_html += mark_safe(
-                        """
-                        <div style='border: 2px solid orange; background-color: #fff3cd; padding: 10px; margin-top: 10px;'>
-                            ⚠️ Achtung: <strong>Alle anderen Apartments sind im gewünschten Zeitraum belegt.</strong><br>
-                            Die Buchung von <strong>La Villa Complete</strong> sollte nur in Ausnahmefällen erfolgen.<br>
-                            Bitte aktiv das Häkchen setzen, um fortzufahren.
-                        </div>
-                        """
-                    )
+                self.warning_html += mark_safe(
+                    """
+                    <div style='border: 2px solid #3174ad; background-color: #e8f0fe; color: #000; padding: 10px; margin-top: 10px;'>
+                        <strong>📌 Hinweis:</strong> 'La Villa Complete' darf nur gebucht werden, wenn mindestens
+                        <em>eine andere Wohnung</em> (z.B. App en Villa oder App en Nave) <u>frei</u> ist.
+                        Mit der Checkbox unten kannst du diese Warnung übergehen.
+                    </div>
+                    """
+                )
 
         except Exception as e:
-            self.warning_html = mark_safe(
-                f"<div style='color:red;'>⚠️ Fehler bei der Prüf-Logik: {e}</div>"
+            self.warning_html += mark_safe(
+                f"<div style='color:red;'>⚠️ Fehler bei der Guthabenprüfung: {e}</div>"
             )
+
+        # Wichtig für Zugriff im Admin
+        self.instance.form = self
+
 
 class LenderAdminForm(forms.ModelForm):
     class Meta:
