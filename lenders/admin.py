@@ -3,6 +3,7 @@ from django.utils.safestring import mark_safe
 from .models import Lender, Loan, Payment, Booking, Apartment, SeasonalRate
 from .forms import BookingAdminForm, LenderAdminForm
 
+
 # 📆 Saisonpreise im Admin
 @admin.register(SeasonalRate)
 class SeasonalRateAdmin(admin.ModelAdmin):
@@ -75,14 +76,17 @@ class BookingAdmin(admin.ModelAdmin):
                 'start_date',
                 'end_date',
                 'custom_total_price',
+                'override_confirm',
             )
         }),
     )
 
     def _saldo_warnung(self, obj):
-        return mark_safe('<div id="saldo-warning"></div>')
+        if hasattr(self.form, "warning_html"):
+            return mark_safe(self.form.warning_html)
+        return mark_safe('<div style="color: gray;">(Noch keine Prüfung durchgeführt)</div>')
 
-    _saldo_warnung.short_description = "Guthabenprüfung"
+    _saldo_warnung.short_description = "⚠️ Warnung"
 
     def total_cost_display(self, obj):
         try:

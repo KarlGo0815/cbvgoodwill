@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
 
-
 LANGUAGE_CHOICES = [
     ('de', 'Deutsch'),
     ('en', 'English'),
@@ -13,7 +12,7 @@ LANGUAGE_CHOICES = [
 class Lender(models.Model):
     first_name = models.CharField("Vorname", max_length=50)
     last_name = models.CharField("Nachname", max_length=50)
-    address = models.CharField("Adresse (Straße & Hausnummer)", max_length=120)  # ✅ kombiniert
+    address = models.CharField("Adresse (Straße & Hausnummer)", max_length=120)
     postal_code = models.CharField("PLZ", max_length=10)
     city = models.CharField("Ort", max_length=50, default="Berlin")
     country = models.CharField("Land", max_length=50)
@@ -99,6 +98,7 @@ class Booking(models.Model):
     end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     custom_total_price = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name="Pauschalpreis (optional)")
+    override_confirm = models.BooleanField(default=False, verbose_name="Ich bestätige die Warnung manuell")
 
     def __str__(self):
         return f"{self.lender} – {self.apartment} – {self.start_date} bis {self.end_date}"
@@ -131,13 +131,13 @@ class Booking(models.Model):
     def clean(self):
         super().clean()
 
-        # Normale Überschneidungsprüfung
         if self.apartment and self.start_date and self.end_date:
             overlapping = Booking.objects.filter(
                 apartment=self.apartment,
                 start_date__lt=self.end_date,
                 end_date__gt=self.start_date,
             ).exclude(id=self.id)
+
             if overlapping.exists():
                 raise ValidationError(
                     _("❌ Diese Buchung überschneidet sich mit einer bestehenden Buchung von %(apartment)s."),
@@ -145,27 +145,21 @@ class Booking(models.Model):
                     params={'apartment': self.apartment.name},
                 )
 
-        # Zusatzregel für „La Villa Complete“
-        if self.apartment.name == "La Villa Complete":
-            required_apartments = ["App en Nave", "App en Villa"]
-            conflicts = []
+            if self.apartment.name.strip().lower() == "la villa complete":
+                other_apartments = Apartment.objects.exclude(name__iexact="La Villa Complete")
+                all_occupied = True
 
-            for apt_name in required_apartments:
-                apt = Apartment.objects.filter(name=apt_name).first()
-                if apt:
-                    overlap = Booking.objects.filter(
+                for apt in other_apartments:
+                    if not Booking.objects.filter(
                         apartment=apt,
                         start_date__lt=self.end_date,
                         end_date__gt=self.start_date,
-                    ).exists()
-                    if not overlap:
-                        return  # es ist ein Apartment frei
+                    ).exists():
+                        all_occupied = False
+                        break
 
-                    conflicts.append(apt_name)
-
-            if conflicts:
-                raise ValidationError(
-                    _("❌ 'La Villa Complete' kann nur gebucht werden, wenn mindestens eines der folgenden Apartments frei ist: %(apartments)s"),
-                    code='villa_conflict',
-                    params={'apartments': ", ".join(required_apartments)},
-                )
+                if all_occupied and not self.override_confirm:
+                    raise ValidationError(
+                        _("❌ Die Buchung von 'La Villa Complete' ist nur erlaubt, wenn mindestens ein anderes Apartment frei ist oder die Warnung bewusst bestätigt wurde."),
+                        code='villa_blocked'
+                    )
