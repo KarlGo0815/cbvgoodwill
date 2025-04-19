@@ -8,6 +8,21 @@
 
 {% block content %}
   <h1>Buchungskalender 📅</h1>
+
+  <!-- 🎨 Farblegende -->
+  <div style="margin-bottom: 1rem;">
+    <h3 style="margin-bottom: 0.5rem;">Farblegende:</h3>
+    <ul style="list-style: none; padding-left: 0;">
+      {% for apartment in apartments %}
+        <li style="margin-bottom: 5px;">
+          <span style="display: inline-block; width: 18px; height: 18px; background-color: {{ apartment.color }}; border-radius: 4px; margin-right: 8px;"></span>
+          {{ apartment.name }}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- 📅 Kalender -->
   <div id="calendar"></div>
 
   <script>
@@ -16,17 +31,18 @@
       const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         height: 650,
-        events: {{ bookings|safe }},
         locale: 'de',
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
           right: 'dayGridMonth,timeGridWeek'
-        }
+        },
+        events: {{ bookings|safe }}
       });
       calendar.render();
     });
   </script>
+
   <style>
     #calendar {
       margin-top: 2rem;

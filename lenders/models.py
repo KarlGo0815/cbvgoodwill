@@ -8,6 +8,16 @@ LANGUAGE_CHOICES = [
     ('en', 'English'),
 ]
 
+APARTMENT_COLORS = [
+    "#ff6666",  # 🍓 Rot
+    "#66b3ff",  # 🌊 Blau
+    "#99ff99",  # 🌿 Grün
+    "#ffcc99",  # 🌅 Orange
+    "#c299ff",  # 🌸 Lila
+    "#ffff99",  # 🌞 Gelb
+    "#cccccc",  # ⚪️ Grau (Fallback)
+]
+
 
 class Lender(models.Model):
     first_name = models.CharField("Vorname", max_length=50)
@@ -76,9 +86,19 @@ class Apartment(models.Model):
     description = models.TextField(blank=True)
     price_per_night = models.DecimalField(max_digits=7, decimal_places=2)
     is_active = models.BooleanField(default=True)
+    color = models.CharField("Farbe (für Kalender)", max_length=7, default="#cccccc")
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.color or self.color == "#cccccc":
+            existing_colors = set(Apartment.objects.values_list("color", flat=True))
+            for color in APARTMENT_COLORS:
+                if color not in existing_colors:
+                    self.color = color
+                    break
+        super().save(*args, **kwargs)
 
 
 class SeasonalRate(models.Model):

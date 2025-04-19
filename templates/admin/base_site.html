@@ -12,9 +12,13 @@
 
 {% block nav-global %}
   <div id="user-tools">
-    <a href="/lenders/calendar/">📅 Buchungskalender</a>
+    <a href="/lenders/calendar/" target="_blank">📅 Buchungskalender</a>
     {% if user.is_active and user.is_staff %}
       | <a href="{% url 'admin:logout' %}">{% translate 'Log out' %}</a>
     {% endif %}
   </div>
+{% endblock %}
+{% block extrahead %}
+  {{ block.super }}
+  <script src="{% static 'lenders/js/check_balance.js' %}"></script>
 {% endblock %}

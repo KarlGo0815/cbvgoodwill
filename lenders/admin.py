@@ -58,7 +58,13 @@ class PaymentAdmin(admin.ModelAdmin):
 
 @admin.register(Apartment)
 class ApartmentAdmin(admin.ModelAdmin):
-    list_display = ("name", "price_per_night", "is_active")
+    list_display = ("name", "price_per_night", "is_active", "color_preview")
+    readonly_fields = ("color_preview",)
+    fields = ("name", "description", "price_per_night", "is_active", "color", "color_preview")
+
+    def color_preview(self, obj):
+        return mark_safe(f'<div style="width: 30px; height: 20px; background: {obj.color}; border: 1px solid #999;"></div>')
+    color_preview.short_description = "Vorschau"
 
 
 @admin.register(Booking)
@@ -82,9 +88,17 @@ class BookingAdmin(admin.ModelAdmin):
     )
 
     def _saldo_warnung(self, obj):
-        if hasattr(self.form, "warning_html"):
-            return mark_safe(self.form.warning_html)
-        return mark_safe('<div style="color: gray;">(Noch keine Prüfung durchgeführt)</div>')
+        """Dieses Feld zeigt Warnungen im Admin-Formular an."""
+        warning_html = ""
+        try:
+            form = getattr(obj, 'form', None)
+            if form and hasattr(form, 'warning_html'):
+                warning_html = form.warning_html
+        except Exception:
+            pass
+
+        # Immer das Div anzeigen, damit JS es finden kann
+        return mark_safe(f'<div id="saldo-warning">{warning_html}</div>')
 
     _saldo_warnung.short_description = "⚠️ Warnung"
 
@@ -98,7 +112,6 @@ class BookingAdmin(admin.ModelAdmin):
 
     class Media:
         js = ("lenders/js/check_balance.js",)  # Dein JS zur Live-Guthabenprüfung
-
 
 # 📍 Link im Admin zur Kalenderansicht
 admin.site.site_url = "/lenders/calendar/"
