@@ -16,6 +16,9 @@ jobs:
     - name: 📅 Generate filename
       run: echo "DATE=$(date +%Y-%m-%d)" >> $GITHUB_ENV
 
+    - name: 🧪 Teste Erreichbarkeit von DB-Host
+      run: ping -c 3 ${{ secrets.DB_HOST }}
+
     - name: 🧠 Dump PostgreSQL DB
       run: |
         export PGPASSWORD="${{ secrets.DB_PASSWORD }}"
