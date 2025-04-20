@@ -2,8 +2,8 @@ name: 📦 PostgreSQL Backup to IONOS (SFTP)
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # täglich um 2 Uhr nachts
-  workflow_dispatch:      # manuell auslösbar
+    - cron: '0 2 * * *'  # Täglich um 2 Uhr nachts
+  workflow_dispatch:      # Manuell auslösbar
 
 jobs:
   backup:
@@ -16,13 +16,14 @@ jobs:
     - name: 📅 Generate filename
       run: echo "DATE=$(date +%Y-%m-%d)" >> $GITHUB_ENV
 
-    - name: 🧪 Teste Erreichbarkeit von DB-Host
-      run: ping -c 3 ${{ secrets.DB_HOST }}
-
     - name: 🧠 Dump PostgreSQL DB
       run: |
         export PGPASSWORD="${{ secrets.DB_PASSWORD }}"
-        pg_dump -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} > cbvgoodwill-${{ env.DATE }}.sql
+        pg_dump -h ${{ secrets.DB_HOST }} \
+                -U ${{ secrets.DB_USER }} \
+                -d ${{ secrets.DB_NAME }} \
+                -F c \
+                -f cbvgoodwill-${{ env.DATE }}.sql
 
     - name: 📡 Upload to IONOS SFTP
       uses: wangyucode/sftp-upload-action@v1
