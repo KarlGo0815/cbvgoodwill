@@ -1,1 +1,2 @@
-💰 Zahlungseingang bestätigt – Casa Bella Vista
+💰 Zahlungsbestätigung – Zahlung vom {{ payment.date }}
+

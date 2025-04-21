@@ -1,11 +1,15 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils.translation import activate
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.utils.translation import activate
+from django.utils.html import strip_tags
 from django.conf import settings
-from .models import Payment, Booking
-from .models import SentConfirmation
+
+from .models import Payment, SentConfirmation
+
+import logging
+logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Payment)
 def send_payment_confirmation(sender, instance, created, **kwargs):
@@ -15,41 +19,38 @@ def send_payment_confirmation(sender, instance, created, **kwargs):
     lender = instance.lender
     activate(lender.language)
 
-    all_payments = lender.payments.order_by("date")
-    total_paid = sum(p.amount_eur() for p in all_payments)
-    bookings = lender.bookings.all()
-    total_used = sum(b.total_cost() for b in bookings)
-    balance = total_paid - total_used
-
     context = {
         "lender": lender,
         "payment": instance,
-        "all_payments": all_payments,
-        "total_paid": f"{total_paid:.2f}",
-        "bookings": bookings,
-        "total_used": f"{total_used:.2f}",
-        "balance": f"{balance:.2f}",
-        "language": lender.language,
+        "payments": lender.payments.order_by("date"),
+        "bookings": lender.bookings.order_by("start_date"),
+        "balance": lender.current_balance(),
+        "language": lender.language
     }
 
     subject = {
-        "de": "Zahlungsbestätigung – Casa Bella Vista",
-        "en": "Payment Confirmation – Casa Bella Vista"
-    }.get(lender.language, "Payment Confirmation")
+        "de": "💰 Zahlungseingang bestätigt",
+        "en": "💰 Payment received"
+    }.get(lender.language, "💰 Payment received")
 
-    html_content = render_to_string("emails/payment_confirmation.html", context)
+    try:
+        html_content = render_to_string(f"emails/payment_confirmation_{lender.language}.html", context)
+        text_content = strip_tags(html_content)
 
-    msg = EmailMultiAlternatives(
-        subject=subject,
-        body="Vielen Dank für Ihre Zahlung." if lender.language == "de" else "Thank you for your payment.",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[lender.email],
-    )
-    msg.attach_alternative(html_content, "text/html")
-    msg.send()
-SentConfirmation.objects.create(
-    lender=lender,
-    payment=instance,
-    language=lender.language,
-    recipient=lender.email
-)
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[lender.email],
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+
+        SentConfirmation.objects.create(
+            lender=lender,
+            payment=instance,
+            language=lender.language,
+            recipient=lender.email
+        )
+    except Exception as e:
+        logger.error(f"Fehler beim Senden der Zahlungsbestätigung für Zahlung {instance.id}: {e}")

@@ -69,23 +69,35 @@ class Payment(models.Model):
     currency = models.CharField(max_length=3, choices=[('EUR', 'Euro'), ('USD', 'US Dollar')])
     exchange_rate = models.DecimalField("Wechselkurs (nur bei USD)", max_digits=6, decimal_places=4, default=Decimal('1.0'))
     loan = models.ForeignKey('Loan', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
+    PAYMENT_TYPE_CHOICES = [
+        (False, _("Flexibel")),
+        (True, _("Fixbetrag")),
+    ]
+    is_fixed = models.BooleanField(
+        _("Zahlungstyp"),
+        choices=PAYMENT_TYPE_CHOICES,
+        default=False
+    )
+    # 🆕 NEU:
+    is_fixed = models.BooleanField("Einmaliger Fixbetrag", default=False)
 
     def amount_eur(self):
         return (self.original_amount * self.exchange_rate).quantize(Decimal('0.01')) if self.currency == 'USD' else self.original_amount
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        if not self.loan:
-            loan, created = Loan.objects.get_or_create(
-                lender=self.lender,
-                loan_type='flexible',
-                defaults={'created_at': self.date}
-            )
-            self.loan = loan
+        if self.is_fixed:
+            self.loan = None
+        else:
+            if not self.loan:
+                loan, _ = Loan.objects.get_or_create(
+                    lender=self.lender,
+                    loan_type='flexible',
+                    defaults={'created_at': self.date}
+                )
+                self.loan = loan
         super().save(*args, **kwargs)
 
-        if is_new:
-            activate(self.lender.language)  # optional, nur falls du Templates direkt danach brauchst
+
 
 class PaymentEmailLog(models.Model):
     payment = models.OneToOneField("Payment", on_delete=models.CASCADE, related_name="email_log")
@@ -94,6 +106,7 @@ class PaymentEmailLog(models.Model):
 
     def __str__(self):
         return f"E-Mail für {self.payment} am {self.sent_at:%Y-%m-%d %H:%M}"
+
 
 class Apartment(models.Model):
     name = models.CharField(max_length=100)
@@ -106,80 +119,13 @@ class Apartment(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        # Automatische Farbvergabe nur wenn keine gesetzt ist oder default verwendet wird
         if not self.color or self.color == "#cccccc":
             existing_colors = set(Apartment.objects.values_list("color", flat=True))
             for color in APARTMENT_COLORS:
                 if color not in existing_colors:
                     self.color = color
                     break
-        is_new = self.pk is None
-        if not self.loan:
-            loan, _ = Loan.objects.get_or_create(
-                lender=self.lender,
-                loan_type='flexible',
-                defaults={'created_at': self.date}
-            )
-            self.loan = loan
         super().save(*args, **kwargs)
-
-        if is_new:
-            activate(self.lender.language)
-            subject = {
-                "de": "💰 Zahlungseingang bestätigt",
-                "en": "💰 Payment Received"
-            }.get(self.lender.language, "Payment Received")
- 
-        # Daten für die Mail
-        payments = self.lender.payments.order_by("date")
-        bookings = self.lender.bookings.order_by("start_date")
-        context = {
-            "lender": self.lender,
-            "payment": self,
-            "payments": payments,
-            "bookings": bookings,
-            "balance": self.lender.current_balance(),
-            "language": self.lender.language
-        }
-
-        html_content = render_to_string(f"emails/payment_confirmation_{self.lender.language}.html", context)
-        text_content = render_to_string(f"emails/payment_confirmation_{self.lender.language}.txt", context)
-
-        email = EmailMultiAlternatives(
-            subject,
-            text_content,
-            settings.DEFAULT_FROM_EMAIL,
-            [self.lender.email]
-        )
-        email.attach_alternative(html_content, "text/html")
-        email.send(fail_silently=False)
-
-        # Logging
-        from .models import PaymentEmailLog
-        PaymentEmailLog.objects.create(payment=self, language=self.lender.language)
-        # Kontextdaten für die Mail
-        context = {
-            "lender": self.lender,
-            "payment": self,
-            "all_payments": self.lender.payments.order_by("date"),
-            "all_bookings": self.lender.bookings.order_by("start_date"),
-            "saldo": self.lender.current_balance(),
-        }
-
-        # E-Mail Inhalte generieren
-        subject = render_to_string("emails/payment_subject.txt", context).strip()
-        text_body = render_to_string("emails/payment_body.txt", context)
-        html_body = render_to_string("emails/payment_body.html", context)
-
-        # E-Mail senden
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=text_body,
-            from_email="CBV Goodwill <noreply@cbvgoodwill.de>",
-            to=[self.lender.email],
-        )
-        email.attach_alternative(html_body, "text/html")
-        email.send()
 
 
 class SeasonalRate(models.Model):
@@ -270,7 +216,8 @@ class Booking(models.Model):
                         _("❌ Die Buchung von 'La Villa Complete' ist nur erlaubt, wenn mindestens ein anderes Apartment frei ist oder die Warnung bewusst bestätigt wurde."),
                         code='villa_blocked'
                     )
-    
+
+
 class SentConfirmation(models.Model):
     lender = models.ForeignKey("Lender", on_delete=models.CASCADE)
     payment = models.ForeignKey("Payment", on_delete=models.CASCADE)

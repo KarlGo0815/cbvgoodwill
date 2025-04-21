@@ -1,1 +1,1 @@
-💰 Payment Received – Casa Bella Vista
+💰 Payment Confirmation – Payment dated {{ payment.date }}

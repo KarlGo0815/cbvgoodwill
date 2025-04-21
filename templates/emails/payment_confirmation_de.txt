@@ -1,0 +1,20 @@
+Liebe/r {{ lender.first_name }},
+
+wir bestätigen den Eingang Deiner Zahlung vom {{ payment.date }} über {{ payment.amount_eur }} €.
+
+Zahlungsverlauf:
+{% for p in payments %}
+- {{ p.date }} – {{ p.amount_eur }} €
+{% endfor %}
+
+Abzüge durch Buchungen:
+{% for b in bookings %}
+- {{ b.apartment.name }}: {{ b.start_date }} – {{ b.end_date }} ({{ b.total_cost }} €)
+{% empty %}
+- Keine Buchungen
+{% endfor %}
+
+Aktuelles Guthaben: {{ balance }} €
+
+Herzliche Grüße  
+Dein Casa Bella Vista Team

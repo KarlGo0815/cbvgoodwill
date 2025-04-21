@@ -1,0 +1,20 @@
+Dear {{ lender.first_name }},
+
+We confirm receipt of your payment from {{ payment.date }} for {{ payment.amount_eur }} €.
+
+Payment History:
+{% for p in payments %}
+- {{ p.date }} – {{ p.amount_eur }} €
+{% endfor %}
+
+Booking Deductions:
+{% for b in bookings %}
+- {{ b.apartment.name }}: {{ b.start_date }} – {{ b.end_date }} ({{ b.total_cost }} €)
+{% empty %}
+- No bookings yet
+{% endfor %}
+
+Current Balance: {{ balance }} €
+
+Best regards,  
+Your Casa Bella Vista Team

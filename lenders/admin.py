@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.urls import path
+from .models import Payment
 from django.template.response import TemplateResponse
 from .models import Lender, Loan, Payment, Booking, Apartment, SeasonalRate
 from .forms import BookingAdminForm, LenderAdminForm
 from django.utils.safestring import mark_safe
 from decimal import Decimal
 from .models import SentConfirmation
+from django.utils.translation import gettext_lazy as _
 
 # 📆 Saisonpreise im Admin
 @admin.register(SeasonalRate)
@@ -45,10 +47,15 @@ class LenderAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ("lender", "date", "original_amount", "currency", "get_amount_eur_display")
-    list_filter = ("currency", "date")
+    list_display = ("lender", "date", "original_amount", "currency", "is_fixed_display", "get_amount_eur_display")
+    list_filter = ("currency", "is_fixed", "date")
     search_fields = ("lender__first_name", "lender__last_name")
 
+    @admin.display(description="Typ", ordering="is_fixed")
+    def is_fixed_display(self, obj):
+        return dict(obj.PAYMENT_TYPE_CHOICES).get(obj.is_fixed, "❓")
+    def is_fixed_display(self, obj):
+        return _("Fixbetrag") if obj.is_fixed else _("Flexibel")
     def get_amount_eur_display(self, obj):
         try:
             return f"{obj.amount_eur():,.2f} €"
