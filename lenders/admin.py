@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.urls import path
 from .models import Payment
 from django.template.response import TemplateResponse
@@ -8,6 +8,10 @@ from django.utils.safestring import mark_safe
 from decimal import Decimal
 from .models import SentConfirmation
 from django.utils.translation import gettext_lazy as _
+from django.utils.html import format_html
+from django.urls import reverse
+from .signals import send_booking_confirmation, send_payment_confirmation
+from django.http import HttpResponseRedirect
 
 # 📆 Saisonpreise im Admin
 @admin.register(SeasonalRate)
@@ -156,11 +160,52 @@ class CustomAdminSite(admin.AdminSite):
 
 @admin.register(SentConfirmation)
 class SentConfirmationAdmin(admin.ModelAdmin):
-    list_display = ("sent_at", "lender", "payment", "language", "recipient")
-    list_filter = ("language", "sent_at")
-    search_fields = ("lender__first_name", "lender__last_name", "recipient")
-    ordering = ("-sent_at",)
-    
+    list_display = ["sent_at", "lender", "linked_confirmation", "recipient", "language", "current_balance", "resend_button"]
+    list_filter = ["language", "sent_at"]
+    search_fields = ["lender__first_name", "lender__last_name", "recipient"]
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path("resend/<int:pk>/", self.admin_site.admin_view(self.resend_confirmation), name="lenders_resend_confirmation"),
+        ]
+        return custom_urls + urls
+
+    @admin.display(description="Bestätigung")
+    def linked_confirmation(self, obj):
+        if obj.payment:
+            url = reverse("admin:lenders_payment_change", args=[obj.payment.pk])
+            return format_html("💰 <a href='{}'>Zahlung #{}</a>", url, obj.payment.pk)
+        elif hasattr(obj, "booking") and obj.booking:
+            url = reverse("admin:lenders_booking_change", args=[obj.booking.pk])
+            return format_html("📅 <a href='{}'>Buchung #{}</a>", url, obj.booking.pk)
+        return "—"
+
+    @admin.display(description="Saldo")
+    def current_balance(self, obj):
+        return f"{obj.lender.current_balance():.2f} €"
+
+    @admin.display(description="📧 Wieder senden")
+    def resend_button(self, obj):
+        url = reverse("admin:lenders_resend_confirmation", args=[obj.pk])
+        return format_html(
+            "<a class='button' style='padding: 4px 10px; background: #3e8ed0; color: white; border-radius: 4px; text-decoration: none;' href='{}'>Senden</a>", url
+        )
+
+    def resend_confirmation(self, request, pk):
+        obj = SentConfirmation.objects.get(pk=pk)
+        if obj.payment:
+            send_payment_confirmation(sender=None, instance=obj.payment, created=False)
+            msg = _("Zahlungsbestätigung wurde erneut gesendet.")
+        elif hasattr(obj, "booking") and obj.booking:
+            send_booking_confirmation(sender=None, instance=obj.booking, created=False)
+            msg = _("Buchungsbestätigung wurde erneut gesendet.")
+        else:
+            msg = _("Keine zugehörige Buchung oder Zahlung gefunden.")
+
+        self.message_user(request, msg, messages.SUCCESS)
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/admin/"))
+                            
 # Initialisiere neue AdminSite
 custom_admin_site = CustomAdminSite(name="custom_admin")
 
