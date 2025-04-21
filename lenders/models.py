@@ -220,7 +220,7 @@ class Booking(models.Model):
 
 class SentConfirmation(models.Model):
     lender = models.ForeignKey("Lender", on_delete=models.CASCADE)
-    payment = models.ForeignKey("Payment", on_delete=models.CASCADE, null=True, blank=True)  # 👈 diese beiden Flags hinzufügen
+    payment = models.ForeignKey("Payment", on_delete=models.CASCADE, null=True, blank=True)  # 👈 das ist neu
     sent_at = models.DateTimeField(auto_now_add=True)
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES)
     recipient = models.EmailField()
