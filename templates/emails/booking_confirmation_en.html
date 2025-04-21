@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Confirmation</title>
+</head>
+<body style="font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
+    <div style="max-width: 600px; background: #fff; padding: 30px; border-radius: 6px;">
+        <img src="https://cbvgoodwill.onrender.com/static/img/admin-logo.png" alt="Casa Bella Vista" style="width: 200px;">
+        <h2>Booking Confirmation</h2>
+        <p>Dear {{ lender.first_name }},</p>
+        <p>We hereby confirm your booking:</p>
+        <ul>
+            <li><strong>Apartment:</strong> {{ booking.apartment.name }}</li>
+            <li><strong>Period:</strong> {{ booking.start_date }} to {{ booking.end_date }}</li>
+            <li><strong>Nights:</strong> {{ booking.nights }}</li>
+            <li><strong>Total cost:</strong> {{ booking.total_cost }} €</li>
+        </ul>
+        <p>Your current balance is <strong>{{ balance }} €</strong>.</p>
+        <p>Thank you and warm regards,<br>Your Casa Bella Vista Team</p>
+    </div>
+</body>
+</html>

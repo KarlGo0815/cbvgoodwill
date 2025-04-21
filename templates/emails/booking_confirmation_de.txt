@@ -1,0 +1,15 @@
+Buchungsbestätigung
+
+Liebe/r {{ lender.first_name }},
+
+wir bestätigen Ihre Buchung:
+
+Apartment: {{ booking.apartment.name }}
+Zeitraum: {{ booking.start_date }} bis {{ booking.end_date }}
+Übernachtungen: {{ booking.nights }}
+Kosten: {{ booking.total_cost }} €
+
+Aktuelles Guthaben: {{ balance }} €
+
+Herzlichen Dank und liebe Grüße
+Ihr Casa Bella Vista Team

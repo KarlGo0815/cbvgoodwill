@@ -1,0 +1,15 @@
+Booking Confirmation
+
+Dear {{ lender.first_name }},
+
+we confirm your booking:
+
+Apartment: {{ booking.apartment.name }}
+Period: {{ booking.start_date }} to {{ booking.end_date }}
+Nights: {{ booking.nights }}
+Total cost: {{ booking.total_cost }} €
+
+Current balance: {{ balance }} €
+
+Thank you and warm regards,
+Your Casa Bella Vista Team
