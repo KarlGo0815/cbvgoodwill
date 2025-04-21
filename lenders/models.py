@@ -220,10 +220,15 @@ class Booking(models.Model):
 
 class SentConfirmation(models.Model):
     lender = models.ForeignKey("Lender", on_delete=models.CASCADE)
-    payment = models.ForeignKey("Payment", on_delete=models.CASCADE, null=True, blank=True)  # 👈 das ist neu
+    payment = models.ForeignKey("Payment", on_delete=models.CASCADE, null=True, blank=True)
+    booking = models.ForeignKey("Booking", on_delete=models.CASCADE, null=True, blank=True)
     sent_at = models.DateTimeField(auto_now_add=True)
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES)
     recipient = models.EmailField()
 
     def __str__(self):
-        return f"{self.lender} – {self.payment.date} – {self.sent_at.strftime('%Y-%m-%d %H:%M')}"
+        if self.payment:
+            return f"Zahlung: {self.payment.date} – {self.lender}"
+        if self.booking:
+            return f"Buchung: {self.booking.start_date} – {self.lender}"
+        return f"Bestätigung – {self.lender}"

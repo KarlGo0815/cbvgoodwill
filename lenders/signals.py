@@ -82,7 +82,7 @@ def send_booking_confirmation(sender, instance, created, **kwargs):
     ):
         SentConfirmation.objects.create(
             lender=lender,
-            payment=None,
+            booking=instance,
             language=lender.language,
             recipient=lender.email
         )
