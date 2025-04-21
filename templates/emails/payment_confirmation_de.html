@@ -1,0 +1,27 @@
+<html>
+  <body style="font-family:sans-serif;">
+    <img src="https://dein-server.de/static/logo.png" alt="Logo" height="40" />
+    <h2>Bestätigung Zahlungseingang</h2>
+    <p>Liebe*r {{ lender.first_name }},</p>
+    <p>wir haben am <strong>{{ payment.date }}</strong> einen Betrag von <strong>{{ payment.original_amount }} {{ payment.currency }}</strong> erhalten.</p>
+
+    <h3>Bisherige Zahlungen:</h3>
+    <ul>
+      {% for p in payments %}
+        <li>{{ p.date }}: {{ p.amount_eur }} €</li>
+      {% endfor %}
+    </ul>
+
+    <h3>Abgewohnte Beträge:</h3>
+    <ul>
+      {% for b in bookings %}
+        <li>{{ b.start_date }} bis {{ b.end_date }}: {{ b.total_cost }} €</li>
+      {% empty %}
+        <li>Keine bisherigen Buchungen.</li>
+      {% endfor %}
+    </ul>
+
+    <p><strong>Aktueller Saldo:</strong> {{ balance }} €</p>
+    <p>Herzlichen Dank!</p>
+  </body>
+</html>

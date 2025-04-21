@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+  <h1>📊 Zahlungen mit Abzügen</h1>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Lender</th>
+        <th>Gesamtzahlungen (€)</th>
+        <th>Abgewohnt (€)</th>
+        <th>Saldo (€)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lender in lenders %}
+        <tr>
+          <td>{{ lender }}</td>
+          <td>{{ lender.total_payments|floatformat:2 }}</td>
+          <td>{{ lender.total_used|floatformat:2 }}</td>
+          <td>{{ lender.balance|floatformat:2 }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

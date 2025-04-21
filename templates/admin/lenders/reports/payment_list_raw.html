@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+  <h1>📥 Alle Zahlungen (Rohdaten)</h1>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Lender</th>
+        <th>Datum</th>
+        <th>Betrag</th>
+        <th>Währung</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for payment in payments %}
+        <tr>
+          <td>{{ payment.lender }}</td>
+          <td>{{ payment.date }}</td>
+          <td>{{ payment.original_amount }}</td>
+          <td>{{ payment.currency }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

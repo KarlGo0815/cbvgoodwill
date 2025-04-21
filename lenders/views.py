@@ -12,23 +12,49 @@ from decimal import Decimal
 
 @staff_member_required
 def calendar_view(request):
-    """Rendert die Kalenderseite für Buchungen."""
-    return render(request, 'calendar.html')
+    from .models import Apartment, Booking
+    from datetime import timedelta
 
+    apartments = Apartment.objects.all()
+    bookings = Booking.objects.select_related("apartment", "lender").all()
+
+    events = []
+    for booking in bookings:
+        color = booking.apartment.color or "#999999"
+        events.append({
+            "title": f"{booking.apartment.name} – {booking.lender.first_name}",
+            "start": booking.start_date.isoformat(),
+            "end": (booking.end_date + timedelta(days=1)).isoformat(),
+            "color": color,
+        })
+
+    return render(request, "lenders/calendar.html", {
+        "bookings": events,  # <-- das brauchst du
+        "apartments": apartments,
+    })
 
 @staff_member_required
 def booking_events(request):
     """Liefert alle Buchungen als JSON (für FullCalendar oder JS-Frontend)."""
+    def get_contrast_color(hex_color):
+        hex_color = hex_color.lstrip('#')
+        r, g, b = [int(hex_color[i:i+2], 16) for i in (0, 2, 4)]
+        brightness = (r*299 + g*587 + b*114) / 1000
+        return '#000000' if brightness > 150 else '#ffffff'
+
     bookings = Booking.objects.select_related("apartment", "lender").all()
     events = []
 
     for booking in bookings:
-        color = booking.apartment.color or "#999999"  # Fallback falls keine Farbe gesetzt
+        color = booking.apartment.color or "#999999"
+        text_color = get_contrast_color(color)
+
         events.append({
             "title": f"{booking.apartment.name} – {booking.lender.first_name}",
             "start": booking.start_date.isoformat(),
-            "end": (booking.end_date + timedelta(days=1)).isoformat(),  # FullCalendar benötigt exclusive end
+            "end": (booking.end_date + timedelta(days=1)).isoformat(),
             "color": color,
+            "textColor": text_color,
         })
 
     return JsonResponse(events, safe=False)
@@ -127,3 +153,45 @@ def check_balance(request):
         })
     else:
         return JsonResponse({"status": "ok"})
+        
+  # -------------------------------
+# 📄 Admin-Reports
+# -------------------------------
+from .models import Payment  # Stelle sicher, dass Payment importiert ist
+from collections import defaultdict
+
+@staff_member_required
+def payment_list_raw(request):
+    """Alle Zahlungen, sortiert nach Lender und Datum."""
+    payments = Payment.objects.select_related("lender").order_by("lender__last_name", "date")
+    return render(request, "admin/lenders/reports/payment_list_raw.html", {
+        "payments": payments
+    })
+
+
+@staff_member_required
+def payment_list_with_usage(request):
+    """Zahlungen mit Aufstellung der verbrauchten Buchungskosten."""
+    lender_data = defaultdict(lambda: {"payments": [], "total": Decimal(0), "used": Decimal(0)})
+
+    for payment in Payment.objects.select_related("lender").all():
+        data = lender_data[payment.lender]
+        data["payments"].append(payment)
+        data["total"] += payment.amount_eur()
+
+    for booking in Booking.objects.select_related("lender").all():
+        lender_data[booking.lender]["used"] += booking.total_cost()
+
+    return render(request, "admin/lenders/reports/payment_list_with_usage.html", {
+        "lender_data": dict(lender_data)
+    })
+
+
+@staff_member_required
+def apartment_price_list(request):
+    """Schöne Preisliste für Appartements."""
+    apartments = Apartment.objects.filter(is_active=True).order_by("name")
+    return render(request, "admin/lenders/reports/apartment_price_list.html", {
+        "apartments": apartments
+    })
+      

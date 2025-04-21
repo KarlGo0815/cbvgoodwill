@@ -1,0 +1,30 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<table class="adminlist">
+  <thead>
+    <tr>
+      <th>Apartment</th>
+      <th>Standardpreis pro Nacht</th>
+      <th>Beschreibung</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in apartments %}
+      <tr>
+        <td>{{ a.name }}</td>
+        <td>{{ a.price_per_night }} €</td>
+        <td>{{ a.description|default:"–" }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<style>
+  @media print {
+    body { background: white; color: black; }
+    h1 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 6px; border: 1px solid #ccc; }
+  }
+</style>
+{% endblock %}

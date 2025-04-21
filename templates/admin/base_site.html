@@ -12,7 +12,10 @@
 
 {% block nav-global %}
   <div id="user-tools">
-    <a href="/lenders/calendar/" target="_blank">📅 Buchungskalender</a>
+    <a href="/lenders/calendar/" target="_blank">📅 Buchungskalender</a> |
+    <a href="/admin/report/payments-raw/" target="_blank">💰 Zahlungen (roh)</a> |
+    <a href="/admin/report/payments-with-usage/" target="_blank">🧾 Zahlungen mit Abzügen</a> |
+    <a href="/admin/report/apartment-prices/" target="_blank">🏘️ Preisliste</a>
     {% if user.is_active and user.is_staff %}
       | <a href="{% url 'admin:logout' %}">{% translate 'Log out' %}</a>
     {% endif %}

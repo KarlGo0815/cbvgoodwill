@@ -1,0 +1,21 @@
+Liebe(r) {{ lender.first_name }},
+
+wir bestätigen den Eingang Ihrer Zahlung in Höhe von {{ payment.original_amount }} {{ payment.currency }}. Vielen Dank dafür!
+
+🔹 Zahlungsübersicht:
+{% for p in payments %}
+- {{ p.date }}: {{ p.amount_eur|floatformat:2 }} EUR
+{% endfor %}
+
+{% if bookings %}
+🔸 Abgewohnte Buchungen:
+{% for b in bookings %}
+- {{ b.apartment.name }} ({{ b.start_date }} bis {{ b.end_date }}): {{ b.total_cost|floatformat:2 }} EUR
+{% endfor %}
+{% endif %}
+
+Aktueller Saldo: {{ balance|floatformat:2 }} EUR
+
+Herzliche Grüße  
+Casa Bella Vista
+casabelavista@amt-fuer-liebe-und-dankbarkeit.de

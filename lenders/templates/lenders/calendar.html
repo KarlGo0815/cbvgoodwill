@@ -26,30 +26,47 @@
   <div id="calendar"></div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const calendarEl = document.getElementById('calendar');
-      const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        height: 650,
-        locale: 'de',
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek'
-        },
-        events: {{ bookings|safe }}
-      });
-      calendar.render();
+  document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      height: 650,
+      locale: 'de',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek'
+      },
+      events: {{ bookings|safe }}
     });
-  </script>
+    calendar.render();
+  });
+</script>
 
   <style>
+    body {
+      background-color: #f0f0f0;
+    }
+
     #calendar {
       margin-top: 2rem;
       background-color: white;
       padding: 1rem;
       border-radius: 8px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+   .fc .fc-daygrid-day.fc-day-today {
+  background-color: #444 !important;       /* Dunkelgrauer Hintergrund */
+  color: #fff !important;                  /* Weiße Schrift */
+  border-radius: 10px !important;          /* Runde Ecken */
+  box-sizing: border-box;
+}
+
+    .fc-event {
+      color: white !important;
+      font-weight: 600;
+      padding: 2px 4px;
     }
   </style>
 {% endblock %}

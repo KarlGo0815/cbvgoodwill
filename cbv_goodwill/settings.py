@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'lenders',
+    'lenders.apps.LendersConfig',
 ]
 
 MIDDLEWARE = [
@@ -112,7 +112,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
+# default Emailadresse
+DEFAULT_FROM_EMAIL = "Casa Bella Vista <casabelavista@amt-fuer-liebe-und-dankbarkeit.de>"
 # Email config
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.ionos.de'

@@ -1,0 +1,31 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+  <h1>🏠 Preisliste der Appartements</h1>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Appartement</th>
+        <th>Grundpreis (€)</th>
+        <th>Saisonpreise</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for apt in apartments %}
+        <tr>
+          <td><strong>{{ apt.name }}</strong></td>
+          <td>{{ apt.price_per_night }}</td>
+          <td>
+            {% for season in apt.seasonal_rates.all %}
+              <div>
+                {{ season.start_date }} – {{ season.end_date }}:
+                <em>{{ season.percentage_adjustment }} %</em>
+              </div>
+            {% empty %}
+              <em>Keine</em>
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

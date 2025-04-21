@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+  {{ block.super }}
+
+  <div style="margin-top: 2em; padding: 1em; background: #f9f9f9; border-radius: 6px;">
+    <h2>📊 Auswertungen & Listen</h2>
+    <ul>
+      <li><a href="{% url 'payment_list_raw' %}">📄 Zahlungen (Rohdaten)</a></li>
+      <li><a href="{% url 'payment_list_with_usage' %}">📊 Zahlungen mit Abzügen</a></li>
+      <li><a href="{% url 'apartment_price_list' %}">🏠 Apartment-Preise</a></li>
+    </ul>
+  </div>
+{% endblock %}

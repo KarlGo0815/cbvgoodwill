@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="UTF-8">
+  <title>Zahlungsbestätigung</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+    .email-container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo img {
+      max-width: 200px;
+    }
+    h1 {
+      color: #007b7b;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 0.9em;
+      color: #777;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="logo">
+      <img src="https://cbvgoodwill.onrender.com/static/img/admin-logo.png" alt="Casa Bella Vista">
+    </div>
+
+    <h1>{% if language == 'de' %}Zahlungseingang{% else %}Payment Received{% endif %}</h1>
+
+    <p>
+      {% if language == 'de' %}
+        Liebe/r {{ lender.first_name }},<br><br>
+        wir haben Deine Zahlung über <strong>{{ payment.original_amount }} {{ payment.currency }}</strong> erhalten.
+      {% else %}
+        Dear {{ lender.first_name }},<br><br>
+        we have received your payment of <strong>{{ payment.original_amount }} {{ payment.currency }}</strong>.
+      {% endif %}
+    </p>
+
+    <h3>{% if language == 'de' %}Zahlungsverlauf{% else %}Payment History{% endif %}</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>{% if language == 'de' %}Datum{% else %}Date{% endif %}</th>
+          <th>{% if language == 'de' %}Betrag (EUR){% else %}Amount (EUR){% endif %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td>{{ p.date }}</td>
+          <td>{{ p.amount_eur|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if bookings %}
+      <h3>{% if language == 'de' %}Abgewohnte Buchungen{% else %}Used Nights{% endif %}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>{% if language == 'de' %}Apartment{% else %}Apartment{% endif %}</th>
+            <th>{% if language == 'de' %}Zeitraum{% else %}Dates{% endif %}</th>
+            <th>{% if language == 'de' %}Kosten{% else %}Cost{% endif %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bookings %}
+          <tr>
+            <td>{{ b.apartment.name }}</td>
+            <td>{{ b.start_date }} – {{ b.end_date }}</td>
+            <td>{{ b.total_cost|floatformat:2 }} €</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <p><strong>{% if language == 'de' %}Aktueller Saldo:{% else %}Current Balance:{% endif %}</strong> {{ balance|floatformat:2 }} €</p>
+
+    <div class="footer">
+      Casa Bella Vista – <a href="mailto:casabelavista@amt-fuer-liebe-und-dankbarkeit.de">Kontakt</a>
+    </div>
+  </div>
+</body>
+</html>
