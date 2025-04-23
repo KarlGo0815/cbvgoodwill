@@ -46,7 +46,8 @@ class CustomAdminSite(admin.AdminSite):
     site_header = "CBV Goodwill Admin"
     site_title = "CBV Admin"
     index_title = "Menue - Auswahlbereich"
-
+    index_template = "admin/index.html"  # 👈 das ist entscheidend
+    
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
