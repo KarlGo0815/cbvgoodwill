@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.csrf import csrf_exempt
@@ -10,6 +11,9 @@ from decimal import Decimal
 # 📅 Kalenderansicht
 # -------------------------------
 
+def lenders_home(request):
+    return HttpResponse("Willkommen im Lenders-Bereich!")
+    
 @staff_member_required
 def calendar_view(request):
     from .models import Apartment, Booking
@@ -195,3 +199,7 @@ def apartment_price_list(request):
         "apartments": apartments
     })
       
+from django.shortcuts import render
+
+def lenders_home(request):
+    return render(request, "lenders/home.html")

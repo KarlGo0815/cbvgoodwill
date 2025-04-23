@@ -4,6 +4,7 @@ from . import views
 app_name = "lenders"  # optional, aber empfohlen für Namensräume
 
 urlpatterns = [
+    path("", views.lenders_home, name="lenders_home"),  # 👈 jetzt ist /lenders/ erreichbar
     # 📆 Kalender-Ansicht
     path("calendar/", views.calendar_view, name="calendar"),
     path("calendar/events/", views.booking_events, name="booking_events"),

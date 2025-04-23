@@ -1,5 +1,6 @@
 # lenders/utils.py
-
+from django.http import HttpResponse
+from django.urls import path
 from django.core.mail import send_mail
 
 def sende_testmail(empfaenger):

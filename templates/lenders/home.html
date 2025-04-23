@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Lenders Bereich</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin-top: 80px;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 0.4em;
+        }
+        p {
+            color: #555;
+            margin-bottom: 2em;
+        }
+        .menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1em;
+        }
+        a.button {
+            display: inline-block;
+            padding: 0.7em 1.5em;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            transition: background-color 0.3s;
+        }
+        a.button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Willkommen im Lenders-Bereich</h1>
+    <p>Wähle eine Funktion:</p>
+
+    <div class="menu">
+        <a href="/lenders/calendar/" class="button">📅 Kalender anzeigen</a>
+        <a href="/lenders/reports/raw/" class="button">📄 Rohdaten-Report</a>
+        <a href="/lenders/reports/with-usage/" class="button">📊 Report mit Nutzung</a>
+        <a href="/lenders/reports/apartments/" class="button">🏠 Wohnungsübersicht</a>
+        <a href="/lenders/check_balance/" class="button">💰 Kontostand prüfen</a>
+    </div>
+</body>
+</html>
