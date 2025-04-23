@@ -116,7 +116,7 @@ class CustomAdminSite(admin.AdminSite):
                 email = EmailMultiAlternatives(
                     subject,
                     strip_tags(html_content),
-                    "Casa Bella Vista <noreply@casabellavista.de>",
+                    "Casa Bella Vista <casabelavista@amt-fuer-liebe-und-dankbarkeit.de>",
                     [recipient]
                 )
                 email.attach_alternative(html_content, "text/html")
