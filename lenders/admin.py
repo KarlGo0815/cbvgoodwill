@@ -1,3 +1,4 @@
+from .email_utils import send_custom_email
 from django.contrib import admin, messages
 from django import forms
 from django.template.loader import render_to_string
@@ -105,24 +106,20 @@ class CustomAdminSite(admin.AdminSite):
                 )
 
             if recipient:
-                activate(language)
-                html_content = render_to_string("emails/custom_email.html", {
-                    "message": message,
-                    "subject": subject,
-                    "language": language,
-                    "recipient": recipient,
-                })
-
-                email = EmailMultiAlternatives(
-                    subject,
-                    strip_tags(html_content),
-                    "Casa Bella Vista <casabelavista@amt-fuer-liebe-und-dankbarkeit.de>",
-                    [recipient]
+                send_custom_email(
+                    recipient=recipient,
+                    subject=subject,
+                    template_name="emails/custom_email.html",
+                    context={
+                        "message": message,
+                        "subject": subject,
+                        "language": language,
+                        "recipient": recipient,
+                    },
+                    language=language
                 )
-                email.attach_alternative(html_content, "text/html")
-                email.send()
 
-                self.message_user(request, f"E-Mail erfolgreich an {recipient} gesendet ✅")
+                messages.success(request, f"E-Mail erfolgreich an {recipient} gesendet ✅")
                 return HttpResponseRedirect("/admin/")
 
         context = {

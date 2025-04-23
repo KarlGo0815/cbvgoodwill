@@ -1,23 +1,66 @@
+{% load currency_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Booking Confirmation</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background-color: #f6f6f6;
+            margin: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: #2c3e50;
+            padding: 20px;
+            text-align: center;
+        }
+        .header img {
+            max-height: 50px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .footer {
+            background: #ecf0f1;
+            padding: 15px;
+            font-size: 12px;
+            text-align: center;
+            color: #888;
+        }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
-    <div style="max-width: 600px; background: #fff; padding: 30px; border-radius: 6px;">
-        <img src="https://cbvgoodwill.onrender.com/static/img/admin-logo.png" alt="Casa Bella Vista" style="width: 200px;">
-        <h2>Booking Confirmation</h2>
-        <p>Dear {{ lender.first_name }},</p>
-        <p>We hereby confirm your booking:</p>
-        <ul>
-            <li><strong>Apartment:</strong> {{ booking.apartment.name }}</li>
-            <li><strong>Period:</strong> {{ booking.start_date }} to {{ booking.end_date }}</li>
-            <li><strong>Nights:</strong> {{ booking.nights }}</li>
-            <li><strong>Total cost:</strong> {{ booking.total_cost }} €</li>
-        </ul>
-        <p>Your current balance is <strong>{{ balance }} €</strong>.</p>
-        <p>Thank you and warm regards,<br>Your Casa Bella Vista Team</p>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="https://cbvgoodwill.onrender.com/static/images/logo-cbv.png" alt="Casa Bella Vista Logo">
+        </div>
+        <div class="content">
+            <h1>Booking Confirmation</h1>
+            <p>Dear {{ lender.first_name }},</p>
+            <p>Thank you for your booking at Casa Bella Vista. Here are the details:</p>
+
+            <ul>
+                <li><strong>Apartment:</strong> {{ booking.apartment.name }}</li>
+                <li><strong>Dates:</strong> {{ booking.start_date }} to {{ booking.end_date }}</li>
+                <li><strong>Total cost:</strong> {{ booking.total_cost|eur }}</li>
+            </ul>
+
+            <p>We look forward to welcoming you. Please feel free to contact us with any questions.</p>
+
+            <p>Warm regards,<br><strong>Casa Bella Vista</strong></p>
+        </div>
+        <div class="footer">
+            Casa Bella Vista · Office for Love and Gratitude<br>
+            This email was generated automatically. No reply necessary.
+        </div>
     </div>
 </body>
 </html>

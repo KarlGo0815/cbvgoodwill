@@ -1,38 +1,66 @@
-{% load static %}
-
+{% load currency_filters %}
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Zahlungsbestätigung</title>
+    <meta charset="UTF-8">
+    <title>Zahlungsbestätigung</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background-color: #f6f6f6;
+            margin: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: #2c3e50;
+            padding: 20px;
+            text-align: center;
+        }
+        .header img {
+            max-height: 50px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .footer {
+            background: #ecf0f1;
+            padding: 15px;
+            font-size: 12px;
+            text-align: center;
+            color: #888;
+        }
+    </style>
 </head>
-<body style="font-family: sans-serif; color: #333;">
-  <div style="max-width: 600px; margin: auto;">
-    <img src="https://cbvgoodwill.onrender.com/static/img/admin-logo.png" alt="Casa Bella Vista Logo" style="max-width: 200px; margin-bottom: 1em;" />
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="https://cbvgoodwill.onrender.com/static/images/logo-cbv.png" alt="Casa Bella Vista Logo">
+        </div>
+        <div class="content">
+            <h1>Zahlungseingang bestätigt</h1>
+            <p>Hallo {{ lender.first_name }},</p>
+            <p>wir haben deine Zahlung erfolgreich erhalten. Vielen Dank!</p>
 
-    <h2>💰 Zahlungsbestätigung</h2>
-    <p>Liebe/r {{ lender.first_name }},</p>
-    <p>wir bestätigen den Eingang Deiner Zahlung vom <strong>{{ payment.date }}</strong> über <strong>{{ payment.amount_eur }} €</strong>.</p>
+            <ul>
+                <li><strong>Betrag:</strong> {{ payment.original_amount|eur }} {{ payment.currency }}</li>
+                <li><strong>Datum:</strong> {{ payment.date }}</li>
+                <li><strong>Saldo nach Zahlung:</strong> {{ balance|eur }}</li>
+            </ul>
 
-    <h3>Zahlungsverlauf:</h3>
-    <ul>
-      {% for p in payments %}
-        <li>{{ p.date }} – {{ p.amount_eur }} €</li>
-      {% endfor %}
-    </ul>
+            <p>Bei Fragen stehen wir dir gerne zur Verfügung.</p>
 
-    <h3>Abzüge durch Buchungen:</h3>
-    <ul>
-      {% for b in bookings %}
-        <li>{{ b.apartment.name }}: {{ b.start_date }} – {{ b.end_date }} ({{ b.total_cost }} €)</li>
-      {% empty %}
-        <li>Keine Buchungen</li>
-      {% endfor %}
-    </ul>
-
-    <p><strong>Aktuelles Guthaben:</strong> {{ balance }} €</p>
-
-    <p style="margin-top: 2em;">Herzliche Grüße<br>Dein Casa Bella Vista Team</p>
-  </div>
+            <p>Herzliche Grüße<br><strong>Casa Bella Vista</strong></p>
+        </div>
+        <div class="footer">
+            Casa Bella Vista · Amt für Liebe und Dankbarkeit<br>
+            Diese E-Mail wurde automatisch erstellt. Antworten ist nicht erforderlich.
+        </div>
+    </div>
 </body>
 </html>

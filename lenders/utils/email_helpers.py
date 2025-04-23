@@ -1,24 +1,24 @@
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from django.conf import settings
+from ..email_utils import send_custom_email
 import logging
 
 logger = logging.getLogger(__name__)
 
 def send_html_email(subject, recipient, context, html_template, text_template=None):
-    try:
-        html_content = render_to_string(html_template, context)
-        text_content = render_to_string(text_template, context) if text_template else strip_tags(html_content)
+    """
+    Wrapper für rückwärtskompatiblen Mailversand.
+    Intern wird send_custom_email verwendet.
+    """
+    language = context.get("language", "de")
 
-        email = EmailMultiAlternatives(
+    try:
+        send_custom_email(
+            recipient=recipient,
             subject=subject,
-            body=text_content,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[recipient],
+            template_name=html_template,
+            context=context,
+            language=language
         )
-        email.attach_alternative(html_content, "text/html")
-        email.send()
+        logger.info(f"📤 E-Mail erfolgreich gesendet an {recipient} mit Template {html_template}")
         return True
     except Exception as e:
         logger.error(f"❌ Fehler beim E-Mail-Versand an {recipient}: {e}")
