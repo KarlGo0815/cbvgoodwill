@@ -90,3 +90,24 @@ class LenderAdminForm(forms.ModelForm):
         required_fields = ["first_name", "last_name", "email", "language"]
         for field_name in self.fields:
             self.fields[field_name].required = field_name in required_fields
+
+
+class AdminEmailForm(forms.Form):
+    lender = forms.ModelChoiceField(
+        queryset=Lender.objects.all().order_by("last_name"),
+        label="Lender auswählen (optional)",
+        required=False
+    )
+    custom_email = forms.EmailField(label="Oder neue E-Mail-Adresse", required=False)
+    language = forms.ChoiceField(label="Sprache", choices=[("de", "Deutsch"), ("en", "Englisch")])
+    subject = forms.CharField(label="Betreff", max_length=200)
+    message = forms.CharField(label="Nachricht", widget=forms.Textarea(attrs={"rows": 6}))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        lender = cleaned_data.get("lender")
+        custom_email = cleaned_data.get("custom_email")
+
+        if not lender and not custom_email:
+            raise ValidationError("Bitte entweder einen Lender auswählen oder eine E-Mail-Adresse eingeben.")
+        return cleaned_data

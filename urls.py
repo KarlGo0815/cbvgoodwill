@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
+from lenders.admin import custom_admin_site
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("lenders/", include("lenders.urls")),  # <- DAS ist wichtig!
+    path("admin/", custom_admin_site.urls),  # ← deine eigene AdminSite
+    path("lenders/", include("lenders.urls")),  # ← App-URLs
 ]

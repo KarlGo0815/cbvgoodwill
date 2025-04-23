@@ -30,6 +30,7 @@ SECRET_KEY = 'django-insecure-gv%d((c%05kg32me=ake(455ap5+58nfu1xbbs=p&s147lmyf@
 DEBUG = True
 
 ALLOWED_HOSTS = ['cbvgoodwill.onrender.com', 'localhost', '127.0.0.1']
+X_FRAME_OPTIONS = "SAMEORIGIN"
 
 # Application definition
 

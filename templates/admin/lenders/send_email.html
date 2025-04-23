@@ -1,0 +1,9 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>E-Mail senden</h1>
+{% if success %}<p style="color:green;">E-Mail wurde erfolgreich versendet.</p>{% endif %}
+<form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="button">Senden</button>
+</form>
+{% endblock %}

@@ -1,7 +1,10 @@
 {% extends "admin/base_site.html" %}
+{% load i18n %}
+
 {% block content %}
-  <h1>📊 Zahlungen mit Abzügen</h1>
-  <table class="admin-table">
+  <h1>Zahlungen mit Nutzung</h1>
+
+  <table class="adminlist">
     <thead>
       <tr>
         <th>Lender</th>
@@ -11,12 +14,12 @@
       </tr>
     </thead>
     <tbody>
-      {% for lender in lenders %}
+      {% for entry in lenders %}
         <tr>
-          <td>{{ lender }}</td>
-          <td>{{ lender.total_payments|floatformat:2 }}</td>
-          <td>{{ lender.total_used|floatformat:2 }}</td>
-          <td>{{ lender.balance|floatformat:2 }}</td>
+          <td>{{ entry.lender }}</td>
+          <td>{{ entry.total_payments|floatformat:2 }}</td>
+          <td>{{ entry.total_used|floatformat:2 }}</td>
+          <td>{{ entry.balance|floatformat:2 }}</td>
         </tr>
       {% endfor %}
     </tbody>

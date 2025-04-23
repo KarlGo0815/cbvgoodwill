@@ -117,6 +117,9 @@ class Apartment(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def current_price(self):
+        return self.price_per_night  # oder mit Logik für Saisonpreise
 
     def save(self, *args, **kwargs):
         if not self.color or self.color == "#cccccc":

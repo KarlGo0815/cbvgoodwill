@@ -9,19 +9,89 @@
     </h1>
   </div>
 {% endblock %}
-
+<li>✉️ <a href="{% url 'admin:send_custom_email' %}">Benutzerdefinierte E-Mail</a></li>
 {% block nav-global %}
-  <div id="user-tools">
-    <a href="/lenders/calendar/" target="_blank">📅 Buchungskalender</a> |
-    <a href="/admin/report/payments-raw/" target="_blank">💰 Zahlungen (roh)</a> |
-    <a href="/admin/report/payments-with-usage/" target="_blank">🧾 Zahlungen mit Abzügen</a> |
-    <a href="/admin/report/apartment-prices/" target="_blank">🏘️ Preisliste</a>
+  <div id="user-tools" style="margin-top: 10px;">
+    <a href="/admin/auswahlbereich/reports/raw/" target="_blank">💳 Rohdaten Zahlungen</a> |
+<a href="/admin/auswahlbereich/reports/with-usage/" target="_blank">📊 Zahlungen mit Nutzung</a> |
+<a href="/admin/auswahlbereich/reports/apartments/" target="_blank">🏘 Apartment-Preise</a> |
+<a href="/lenders/calendar/" target="_blank">📅 Buchungskalender</a>
     {% if user.is_active and user.is_staff %}
       | <a href="{% url 'admin:logout' %}">{% translate 'Log out' %}</a>
     {% endif %}
   </div>
 {% endblock %}
+
 {% block extrahead %}
   {{ block.super }}
   <script src="{% static 'lenders/js/check_balance.js' %}"></script>
+  <style>
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      width: 90%;
+      height: 90%;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .modal-content iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+  <script>
+    function openModal(url) {
+      const modal = document.getElementById("cbv-modal");
+      const frame = document.getElementById("cbv-modal-frame");
+      frame.src = url;
+      modal.style.display = "flex";
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("cbv-modal");
+      const frame = document.getElementById("cbv-modal-frame");
+      frame.src = "";
+      modal.style.display = "none";
+    }
+
+    window.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    });
+  </script>
+{% endblock %}
+
+{% block footer %}
+  {{ block.super }}
+  <!-- Modal -->
+  <div id="cbv-modal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <iframe id="cbv-modal-frame" src=""></iframe>
+    </div>
+  </div>
 {% endblock %}

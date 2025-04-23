@@ -1,15 +1,112 @@
-{% extends "admin/base_site.html" %}
-{% load static %}
+{% extends "admin/index.html" %}
+{% load static i18n %}
+
+{% block sidebar %}
+  <!-- Versteckt die Recent Actions -->
+{% endblock %}
 
 {% block content %}
   {{ block.super }}
 
-  <div style="margin-top: 2em; padding: 1em; background: #f9f9f9; border-radius: 6px;">
-    <h2>📊 Auswertungen & Listen</h2>
+  <style>
+    .cbv-section {
+      max-width: 980px;
+      margin: 40px auto;
+      padding: 20px;
+      border-top: 2px solid #ccc;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .cbv-section h2 {
+      margin-bottom: 10px;
+    }
+
+    .cbv-section ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .cbv-section a {
+      text-decoration: none;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      width: 90%;
+      height: 90%;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .modal-content iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+
+  <div class="cbv-section">
+    <h2>🏠 Auswahlbereich – Casa Bella Vista</h2>
     <ul>
-      <li><a href="{% url 'payment_list_raw' %}">📄 Zahlungen (Rohdaten)</a></li>
-      <li><a href="{% url 'payment_list_with_usage' %}">📊 Zahlungen mit Abzügen</a></li>
-      <li><a href="{% url 'apartment_price_list' %}">🏠 Apartment-Preise</a></li>
+      <li>💳 <a href="#" onclick="openModal('{% url 'admin:payment_list_raw' %}')">Rohdaten Zahlungen</a></li>
+      <li>📊 <a href="#" onclick="openModal('{% url 'admin:payment_list_with_usage' %}')">Zahlungen mit Nutzung</a></li>
+      <li>🏘 <a href="#" onclick="openModal('{% url 'admin:apartment_price_list' %}')">Apartment-Preise</a></li>
+      <li>📅 <a href="{% url 'lenders:calendar' %}" target="_blank">📅 Buchungskalender</a></li>
+      <li>✉️ <a href="{% url 'admin:send_custom_email' %}">E-Mail versenden</a></li>
     </ul>
   </div>
+
+  <!-- Modal -->
+  <div id="cbv-modal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <iframe id="cbv-modal-frame" src=""></iframe>
+    </div>
+  </div>
+
+  <script>
+    function openModal(url) {
+      const modal = document.getElementById("cbv-modal");
+      const frame = document.getElementById("cbv-modal-frame");
+      frame.src = url;
+      modal.style.display = "flex";
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("cbv-modal");
+      const frame = document.getElementById("cbv-modal-frame");
+      frame.src = "";
+      modal.style.display = "none";
+    }
+
+    window.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    });
+  </script>
 {% endblock %}
